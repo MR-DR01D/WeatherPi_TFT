@@ -72,13 +72,13 @@ theme_config = config["THEME"]
 theme_settings = open(PATH + theme_config).read()
 theme = json.loads(theme_settings)
 
-SERVER = config['WEATHERBIT_URL']
+SERVER = config['OPENMETEO_URL']
 HEADERS = {}
-WEATHERBIT_COUNTRY = config['WEATHERBIT_COUNTRY']
-WEATHERBIT_LANG = config['WEATHERBIT_LANGUAGE']
-WEATHERBIT_POSTALCODE = config['WEATHERBIT_POSTALCODE']
-WEATHERBIT_HOURS = config['WEATHERBIT_HOURS']
-WEATHERBIT_DAYS = config['WEATHERBIT_DAYS']
+OPENMETEO_LANG = config['OPENMETEO_LANGUAGE']
+OPENMETEO_LAT = config['OPENMETEO_LAT']
+OPENMETEO_LON = config['OPENMETEO_LON']
+OPENMETEO_DAYS = config['OPENMETEO_DAYS']
+OPENMETEO_TIMEZONE = config['OPENMETEO_TIMEZONE']
 METRIC = config['LOCALE']['METRIC']
 
 locale.setlocale(locale.LC_ALL, (config['LOCALE']['ISO'], 'UTF-8'))
@@ -91,11 +91,10 @@ try:
     # or to create your own custom test data for your own dashboard views)
     if config['ENV'] == 'DEV':
         SERVER = config['MOCKSERVER_URL']
-        WEATHERBIT_IO_KEY = config['WEATHERBIT_DEV_KEY']
         HEADERS = {'X-Api-Key': f'{config["MOCKSERVER_API_KEY"]}'}
 
     elif config['ENV'] == 'STAGE':
-        WEATHERBIT_IO_KEY = config['WEATHERBIT_DEV_KEY']
+        pass
 
     elif config['ENV'] == 'Pi':
         if config['DISPLAY']['FRAMEBUFFER'] is not False:
@@ -104,7 +103,6 @@ try:
             os.environ["SDL_VIDEODRIVER"] = "fbcon"
 
         LOG_PATH = '/mnt/ramdisk/'
-        WEATHERBIT_IO_KEY = config['WEATHERBIT_IO_KEY']
 
     logger.info(f"STARTING IN {config['ENV']} MODE")
 
@@ -529,27 +527,193 @@ class Update(object):
 
         CONNECTION = pygame.time.get_ticks() + 1500  # 1.5 seconds
 
-        try:
+        def wmo_code_to_icon(wmo_code, is_day):
+            """Convert WMO weather code to Weatherbit icon format"""
+            day_night = 'd' if is_day else 'n'
 
-            current_endpoint = f'{SERVER}/current'
-            daily_endpoint = f'{SERVER}/forecast/daily'
-            stats_endpoint = f'{SERVER}/subscription/usage'
-            units = 'M' if METRIC else 'I'
+            # Clear sky
+            if wmo_code == 0:
+                return f'c01{day_night}'
+            # Mainly clear, partly cloudy, overcast
+            elif wmo_code == 1:
+                return f'c02{day_night}'
+            elif wmo_code == 2:
+                return f'c03{day_night}'
+            elif wmo_code == 3:
+                return f'c04{day_night}'
+            # Fog
+            elif wmo_code in [45, 48]:
+                return f'f01{day_night}'
+            # Drizzle
+            elif wmo_code in [51, 53, 55]:
+                return f'd01{day_night}'
+            # Freezing drizzle
+            elif wmo_code in [56, 57]:
+                return f'd02{day_night}'
+            # Rain
+            elif wmo_code == 61:
+                return f'r01{day_night}'
+            elif wmo_code == 63:
+                return f'r02{day_night}'
+            elif wmo_code == 65:
+                return f'r03{day_night}'
+            # Freezing rain
+            elif wmo_code in [66, 67]:
+                return f'r04{day_night}'
+            # Snow
+            elif wmo_code == 71:
+                return f's01{day_night}'
+            elif wmo_code == 73:
+                return f's02{day_night}'
+            elif wmo_code == 75:
+                return f's03{day_night}'
+            # Snow grains
+            elif wmo_code == 77:
+                return f's04{day_night}'
+            # Rain showers
+            elif wmo_code == 80:
+                return f'r04{day_night}'
+            elif wmo_code == 81:
+                return f'r05{day_night}'
+            elif wmo_code == 82:
+                return f'r06{day_night}'
+            # Snow showers
+            elif wmo_code == 85:
+                return f's05{day_night}'
+            elif wmo_code == 86:
+                return f's06{day_night}'
+            # Thunderstorm
+            elif wmo_code == 95:
+                return f't01{day_night}'
+            elif wmo_code in [96, 99]:
+                return f't02{day_night}'
+            else:
+                return f'unknown'
+
+        def wmo_code_to_description(wmo_code):
+            """Convert WMO weather code to human-readable description"""
+            descriptions = {
+                0: "Clear sky",
+                1: "Mainly clear",
+                2: "Partly cloudy",
+                3: "Overcast",
+                45: "Fog",
+                48: "Depositing rime fog",
+                51: "Light drizzle",
+                53: "Moderate drizzle",
+                55: "Dense drizzle",
+                56: "Light freezing drizzle",
+                57: "Dense freezing drizzle",
+                61: "Slight rain",
+                63: "Moderate rain",
+                65: "Heavy rain",
+                66: "Light freezing rain",
+                67: "Heavy freezing rain",
+                71: "Slight snowfall",
+                73: "Moderate snowfall",
+                75: "Heavy snowfall",
+                77: "Snow grains",
+                80: "Slight rain showers",
+                81: "Moderate rain showers",
+                82: "Violent rain showers",
+                85: "Slight snow showers",
+                86: "Heavy snow showers",
+                95: "Thunderstorm",
+                96: "Thunderstorm with slight hail",
+                99: "Thunderstorm with heavy hail"
+            }
+            return descriptions.get(wmo_code, "Unknown weather")
+
+        def wind_deg_to_dir(deg):
+            """Convert wind degrees to cardinal direction"""
+            directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                         "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+            return directions[int((deg + 11.25) / 22.5) % 16]
+
+        def transform_openmeteo_data(meteo_data):
+            """Transform Open-Meteo response to match expected Weatherbit structure"""
+
+            # Transform current weather data
+            current = meteo_data['current']
+            current_data = {
+                'data': [{
+                    'temp': current['temperature_2m'],
+                    'weather': {
+                        'description': wmo_code_to_description(current['weather_code']),
+                        'icon': wmo_code_to_icon(current['weather_code'], current['is_day'])
+                    },
+                    'wind_spd': current['wind_speed_10m'],
+                    'wind_cdir': wind_deg_to_dir(current['wind_direction_10m']),
+                    'wind_dir': current['wind_direction_10m'],
+                    'ts': int(datetime.datetime.fromisoformat(current['time']).timestamp())
+                }]
+            }
+
+            # Transform daily forecast data
+            daily_data = {
+                'data': []
+            }
+
+            for i in range(min(len(meteo_data['daily']['time']), OPENMETEO_DAYS)):
+                day_data = {
+                    'datetime': meteo_data['daily']['time'][i],
+                    'ts': int(datetime.datetime.fromisoformat(meteo_data['daily']['time'][i]).timestamp()),
+                    'low_temp': meteo_data['daily']['temperature_2m_min'][i],
+                    'high_temp': meteo_data['daily']['temperature_2m_max'][i],
+                    'weather': {
+                        'description': wmo_code_to_description(meteo_data['daily']['weather_code'][i]),
+                        'icon': wmo_code_to_icon(meteo_data['daily']['weather_code'][i], True)  # Default to day icon
+                    },
+                    'pop': meteo_data['daily']['precipitation_probability_max'][i],
+                    'precip': meteo_data['daily']['precipitation_sum'][i],
+                    'snow': meteo_data['daily']['snowfall_sum'][i],
+                    'sunrise_ts': int(datetime.datetime.fromisoformat(meteo_data['daily']['sunrise'][i]).timestamp()),
+                    'sunset_ts': int(datetime.datetime.fromisoformat(meteo_data['daily']['sunset'][i]).timestamp())
+                }
+                daily_data['data'].append(day_data)
+
+            # Create mock stats data (Open-Meteo doesn't provide usage stats)
+            stats_data = {
+                'calls_remaining': 999999  # No API limits for free tier
+            }
+
+            return current_data, daily_data, stats_data
+
+        try:
 
             logger.info(f'connecting to server: {SERVER}')
 
-            options = str(f'&postal_code={WEATHERBIT_POSTALCODE}'
-                          f'&country={WEATHERBIT_COUNTRY}'
-                          f'&lang={WEATHERBIT_LANG}'
-                          f'&units={units}')
+            # Build Open-Meteo API request parameters
+            current_params = [
+                'temperature_2m', 'weather_code', 'wind_speed_10m',
+                'wind_direction_10m', 'is_day'
+            ]
 
-            current_request_url = str(f'{current_endpoint}?key={WEATHERBIT_IO_KEY}{options}')
-            daily_request_url = str(f'{daily_endpoint}?key={WEATHERBIT_IO_KEY}{options}&days={WEATHERBIT_DAYS}')
-            stats_request_url = str(f'{stats_endpoint}?key={WEATHERBIT_IO_KEY}')
+            daily_params = [
+                'weather_code', 'temperature_2m_max', 'temperature_2m_min',
+                'sunrise', 'sunset', 'precipitation_sum', 'snowfall_sum',
+                'precipitation_probability_max'
+            ]
 
-            current_data = requests.get(current_request_url, headers=HEADERS).json()
-            daily_data = requests.get(daily_request_url, headers=HEADERS).json()
-            stats_data = requests.get(stats_request_url, headers=HEADERS).json()
+            options = str(f'latitude={OPENMETEO_LAT}'
+                          f'&longitude={OPENMETEO_LON}'
+                          f'&current={",".join(current_params)}'
+                          f'&daily={",".join(daily_params)}'
+                          f'&timezone={OPENMETEO_TIMEZONE}'
+                          f'&forecast_days={OPENMETEO_DAYS}')
+
+            request_url = str(f'{SERVER}?{options}')
+
+            response = requests.get(request_url, headers=HEADERS)
+            weather_data = response.json()
+
+            # Check for API errors
+            if 'error' in weather_data:
+                logger.error(f"Open-Meteo API error: {weather_data.get('reason', 'Unknown error')}")
+                raise Exception(f"API Error: {weather_data.get('reason', 'Unknown error')}")
+
+            # Transform Open-Meteo data to match expected Weatherbit structure
+            current_data, daily_data, stats_data = transform_openmeteo_data(weather_data)
 
             data = {
                 'current': current_data,

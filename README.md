@@ -1,5 +1,9 @@
 # WeatherPi_TFT
 
+> **🆕 NEW: Now powered by Open-Meteo!**
+> WeatherPi_TFT has been migrated from Weatherbit to **[Open-Meteo](https://open-meteo.com/)** - a free, open-source weather API.
+> ✅ **No API key required** | ✅ **Unlimited calls** | ✅ **Global coverage** | ✅ **Free forever**
+
 Working on @pimoroni HyperPixel4 Display and a Raspberry Pi 3 B+
 ![Hardware](https://user-images.githubusercontent.com/753562/85412425-d9e3cd00-b569-11ea-9a87-57c09a9328d0.jpg)
 
@@ -216,14 +220,15 @@ sudo mount -a
 sudo reboot
 ```
 
-while your Pi reboots grep your API key ...
+while your Pi reboots, let's configure the weather API...
 
-### get an api key from weatherbit.io
+### Open-Meteo Weather API (No API key needed!)
 
-* go to [weatherbit.io](https://www.weatherbit.io/)
-* and register to get an API key
+* WeatherPi_TFT now uses **[Open-Meteo](https://open-meteo.com/)** - a free, open-source weather API
+* No registration or API key required - completely free for non-commercial use
+* Global weather coverage with high-resolution forecasts
 
-### add API key and other options to the config file
+### add location and other options to the config file
 
 when your Pi has rebooted
 
@@ -266,14 +271,14 @@ otherwise set it to `false`
 * `SHOW_API_STATS` show how many API calls are left over (resets every midnight UTC)
 * `MOUSE` enable/disable mouse pointer - needed for local development, better leave it disabled
 
-#### configure weatherbit.io settings
+#### configure Open-Meteo settings
 
-* replace `xxxxxxxxxxxxxxxxxxxxxxxxx` in  `"WEATHERBIT_IO_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxx"` with your own API key
-* replace `en` in `"WEATHERBIT_LANGUAGE": "en"` with your preferred language
-* replace `de` in `"WEATHERBIT_COUNTRY": "de"` with your country
-* replace `10178` in `"WEATHERBIT_POSTALCODE": 10178` with your zip code / postal code (this example-location zip code 
-is from berlin city, germany)
-* for language-support, units, etc please refer to -> **[weatherbit API Docs](https://www.weatherbit.io/api)**
+* set `"OPENMETEO_LAT": 52.5200` to your location's latitude (example: Berlin, Germany)
+* set `"OPENMETEO_LON": 13.4050` to your location's longitude
+* optionally change `"OPENMETEO_LANGUAGE": "en"` to your preferred language
+* set `"OPENMETEO_DAYS": 4` for the number of forecast days (max 16)
+* **No API key needed!** Open-Meteo is completely free
+* for detailed API documentation refer to -> **[Open-Meteo API Docs](https://open-meteo.com/en/docs)**
 
 #### localise hardcoded strings and ISO settings
 ```
@@ -287,9 +292,9 @@ is from berlin city, germany)
 ```
 * change `"ISO"` and `"METRIC"` according to your needs
 * `"METRIC": true` will get all weather data units as metric system, change to `false` if you prefer imperial styled units
-    * `°C` will be `°F` and `km/h` will be `mph 
-    * will also change the request parameter `untis` for the api request 
-    (see [weatherbit API Docs](https://www.weatherbit.io/api) for more details)
+    * `°C` will be `°F` and `km/h` will be `mph`
+    * will also change the units parameter for the API request
+    * Open-Meteo supports both metric and imperial units
 
 #### timer options
 ```
@@ -298,8 +303,8 @@ is from berlin city, germany)
     "RELOAD": 30
   },
 ```
-* the `UPDATE` timer defines how often the API will be called in seconds - 7min will give you enough API calls over the day
-* `RELOAD` defines who often the information on the display will be updated 
+* the `UPDATE` timer defines how often the API will be called in seconds - with Open-Meteo you can set this much lower if needed (no rate limits!)
+* `RELOAD` defines how often the information on the display will be updated 
 
 ### theme file and theme options
 set your theme file [darcula.theme, light.theme or example.theme] in `config.json`
@@ -412,7 +417,8 @@ sudo update-rc.d PiButtons defaults
 
 * [squix78](https://github.com/squix78) for his [esp8266 weather station color](https://github.com/squix78/esp8266-weather-station-color) which inspired me to make it in python for a raspberry and another weather api
 * [adafruit](https://github.com/adafruit) for [hardware](https://www.adafruit.com/) and [tutorials](https://learn.adafruit.com/)
-* [weatherbit.io](https://www.weatherbit.io/) for weather api and [documentation](https://www.weatherbit.io/api)
+* [Open-Meteo](https://open-meteo.com/) for the free, open-source weather API and excellent [documentation](https://open-meteo.com/en/docs)
+* [weatherbit.io](https://www.weatherbit.io/) for the original weather API (now migrated to Open-Meteo)
 * weather icons: [@erikflowers](https://github.com/erikflowers) [weather-icons](https://github.com/erikflowers/weather-icons), making them colorful was my work
 * statusbar icons: [google](https://github.com/google) [material-design-icons](https://github.com/google/material-design-icons)
 * default font: [google - roboto](https://fonts.google.com/)
