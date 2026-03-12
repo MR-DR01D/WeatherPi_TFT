@@ -1,5 +1,12 @@
 # WeatherPi_TFT
 
+> **🆕 NEW: A fully functional LANDSCAPE mode has been added!**
+> (It is activated automatically if the display width in the config file is greater than the height.)
+> Various minor fixes have been made to ensure proper operation with the current (3.14) version of Python.
+
+![LANDSCAPE_dark](https://github.com/MR-DR01D/WeatherPi_TFT/blob/master/.github/landscape_darcula.jpg)
+![LANDSCAPE_light](https://github.com/MR-DR01D/WeatherPi_TFT/blob/master/.github/landscape_light.jpg)
+
 > **🆕 NEW: Now powered by Open-Meteo!**
 > WeatherPi_TFT has been migrated from Weatherbit to **[Open-Meteo](https://open-meteo.com/)** - a free, open-source weather API.
 > ✅ **No API key required** | ✅ **Unlimited calls** | ✅ **Global coverage** | ✅ **Free forever**
