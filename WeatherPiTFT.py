@@ -848,6 +848,10 @@ class Update(object):
 
                 PRECIPTYPE = config['LOCALE']['SNOW_STR']
                 PRECIPCOLOR = WHITE
+            else:
+
+                PRECIPTYPE = config['LOCALE']['PRECIP_STR']
+                PRECIPCOLOR = GREEN
 
         logger.info(f'update PRECIPPOP to: {pop} %')
         logger.info(f'update PRECIPTYPE to: {PRECIPTYPE}')
