@@ -72,13 +72,13 @@ theme_config = config["THEME"]
 theme_settings = open(PATH + theme_config).read()
 theme = json.loads(theme_settings)
 
-SERVER = config['OPENMETEO_URL']
+SERVER = config['OPENMETEO']['URL']
 HEADERS = {}
-OPENMETEO_LANG = config['OPENMETEO_LANGUAGE']
-OPENMETEO_LAT = config['OPENMETEO_LAT']
-OPENMETEO_LON = config['OPENMETEO_LON']
-OPENMETEO_DAYS = config['OPENMETEO_DAYS']
-OPENMETEO_TIMEZONE = config['OPENMETEO_TIMEZONE']
+OPENMETEO_LANG = config['OPENMETEO']['LANGUAGE']
+OPENMETEO_LAT = config['OPENMETEO']['LAT']
+OPENMETEO_LON = config['OPENMETEO']['LON']
+OPENMETEO_DAYS = config['OPENMETEO']['DAYS']
+OPENMETEO_TIMEZONE = config['OPENMETEO']['TIMEZONE']
 METRIC = config['LOCALE']['METRIC']
 
 locale.setlocale(locale.LC_ALL, (config['LOCALE']['ISO'], 'UTF-8'))
@@ -102,7 +102,7 @@ try:
             os.putenv('SDL_FBDEV', config['DISPLAY']['FRAMEBUFFER'])
             os.environ["SDL_VIDEODRIVER"] = "fbcon"
 
-        LOG_PATH = '/mnt/ramdisk/'
+        LOG_PATH = config['LOG_PATH']
 
     logger.info(f"STARTING IN {config['ENV']} MODE")
 
@@ -420,7 +420,7 @@ class DrawImage:
 
         self.fillcolor = fillcolor
 
-        self.image = pygame.image.fromstring(self.image.tobytes(), self.image.size, self.image.mode)
+        self.image = pygame.image.frombytes(self.image.tobytes(), self.image.size, self.image.mode)
 
     @staticmethod
     def fill(surface, fillcolor: tuple):
@@ -1051,7 +1051,7 @@ def draw_moon_layer(surf, y, size):
     logger.debug(f'moon phase age: {moon_age} percentage: {round(100 - (sum_length / sum_x) * 100, 1)}')
 
     image = image.resize((size, size), Image.LANCZOS if AA else Image.BILINEAR)
-    image = pygame.image.fromstring(image.tobytes(), image.size, image.mode)
+    image = pygame.image.frombytes(image.tobytes(), image.size, image.mode)
 
     x = (SURFACE_WIDTH / 2) - (size / 2)
 
