@@ -4,6 +4,7 @@
     "HEIGHT": 320,
     "FPS": 30,
     "AA": false,
+    "FULLSCREEN": false,
     "ANIMATION": true,
     "FRAMEBUFFER": "/dev/fb1",
     "PWM": false,
@@ -11,12 +12,14 @@
     "SHOW_API_STATS": true,
     "MOUSE": false
   },
-  "OPENMETEO_URL": "https://api.open-meteo.com/v1/forecast",
-  "OPENMETEO_LANGUAGE": "en",
-  "OPENMETEO_LAT": 52.5200,
-  "OPENMETEO_LON": 13.4050,
-  "OPENMETEO_DAYS": 4,
-  "OPENMETEO_TIMEZONE": "auto",
+  "OPENMETEO": {
+    "URL": "https://api.open-meteo.com/v1/forecast",
+    "LANGUAGE": "en",
+    "LAT": 52.5200,
+    "LON": 13.4050,
+    "DAYS": 4,
+    "TIMEZONE": "auto"
+  },
   "LOCALE": {
     "ISO": "en_GB",
     "RAIN_STR": "Rain",
@@ -24,10 +27,11 @@
     "PRECIP_STR": "Precipitation",
     "METRIC": true
   },
-  "THEME": "example.theme",
-  "TIMER": {
+    "TIMER": {
     "UPDATE": 420,
     "RELOAD": 60
   },
-  "ENV": "Pi"
+  "THEME": "example.theme",
+  "ENV": "Pi",
+  "LOG_PATH": "/mnt/ramdisk"
 }
