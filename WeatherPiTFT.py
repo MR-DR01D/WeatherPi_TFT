@@ -701,13 +701,21 @@ class Update(object):
 
             # Build Open-Meteo API request parameters
             current_params = [
-                'temperature_2m', 'weather_code', 'wind_speed_10m',
-                'wind_direction_10m', 'is_day'
+                'temperature_2m',
+                'weather_code',
+                'wind_speed_10m',
+                'wind_direction_10m',
+                'is_day'
             ]
 
             daily_params = [
-                'weather_code', 'temperature_2m_max', 'temperature_2m_min',
-                'sunrise', 'sunset', 'precipitation_sum', 'snowfall_sum',
+                'weather_code',
+                'temperature_2m_max',
+                'temperature_2m_min',
+                'sunrise',
+                'sunset',
+                'precipitation_sum',
+                'snowfall_sum',
                 'precipitation_probability_max'
             ]
 
@@ -717,6 +725,11 @@ class Update(object):
                           f'&daily={",".join(daily_params)}'
                           f'&timezone={OPENMETEO_TIMEZONE}'
                           f'&forecast_days={OPENMETEO_DAYS}')
+
+            if not METRIC:
+                options += '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch'
+
+            #print(options)
 
             request_url = str(f'{SERVER}?{options}')
 
@@ -907,9 +920,9 @@ class Update(object):
 
         if LANDSCAPE:
 
-            day_1_min_max_temp = f"{str(int(day_1['low_temp'])).rjust(3)} |{str(int(day_1['high_temp'])).rjust(3)}"
-            day_2_min_max_temp = f"{str(int(day_2['low_temp'])).rjust(3)} |{str(int(day_2['high_temp'])).rjust(3)}"
-            day_3_min_max_temp = f"{str(int(day_3['low_temp'])).rjust(3)} |{str(int(day_3['high_temp'])).rjust(3)}"
+            day_1_min_max_temp = f"{str(int(day_1['low_temp'])).rjust(3)}|{str(int(day_1['high_temp'])).rjust(3)}"
+            day_2_min_max_temp = f"{str(int(day_2['low_temp'])).rjust(3)}|{str(int(day_2['high_temp'])).rjust(3)}"
+            day_3_min_max_temp = f"{str(int(day_3['low_temp'])).rjust(3)}|{str(int(day_3['high_temp'])).rjust(3)}"
 
         else:
 
@@ -922,7 +935,6 @@ class Update(object):
 
         wind_direction = str(current_forecast['wind_cdir'])
         wind_speed = float(current_forecast['wind_spd'])
-        wind_speed = wind_speed * 3.6 if METRIC else wind_speed
         wind_speed_unit = 'km/h' if METRIC else 'mph'
         wind_speed_string = str(f'{round(wind_speed, 1)} {wind_speed_unit}')
 
@@ -948,7 +960,6 @@ class Update(object):
                 elif PRECIPTYPE == config['LOCALE']['SNOW_STR']:
 
                      DrawImage(new_surf, images['precipsnow'], size=20).draw_position(pos=(110, 100))
-
 
             DrawImage(new_surf, images[FORECASTICON_DAY_1], 185, size=50).left()
             DrawImage(new_surf, images[FORECASTICON_DAY_2], 185, size=50).left(75)
@@ -978,13 +989,9 @@ class Update(object):
             DrawString(new_surf, day_2_ts, FONT_SMALL_BOLD, ORANGE, 150).center(4, 1, -10)
             DrawString(new_surf, day_3_ts, FONT_SMALL_BOLD, ORANGE, 150).center(4, 2, -10)
 
-            DrawString(new_surf, day_1_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 0, -15)
-            DrawString(new_surf, day_2_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 1, -20)
-            DrawString(new_surf, day_3_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 2, -20)
-
-            # DrawString(new_surf, day_1_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 0, -5)
-            # DrawString(new_surf, day_2_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 1, -10)
-            # DrawString(new_surf, day_3_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 2, -10)
+            DrawString(new_surf, day_1_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 0, -5)
+            DrawString(new_surf, day_2_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 1, -10)
+            DrawString(new_surf, day_3_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 2, -10)
 
             DrawString(new_surf, sunrise, FONT_SMALL_BOLD, MAIN_FONT, 40).right()
             DrawString(new_surf, sunset, FONT_SMALL_BOLD, MAIN_FONT, 70).right()
@@ -1127,6 +1134,9 @@ def draw_moon_layer(surf, x, y, size):
 
     # draw full moon
     draw.ellipse([(1, 1), (_size, _size)], fill=WHITE)
+
+    # draw dark circle around the moon
+    #draw.circle((500, 500), radius, None, LIGHT_GRAY, 3)
 
     # draw dark side of the moon
     theta = moon_age / 14.765 * math.pi
