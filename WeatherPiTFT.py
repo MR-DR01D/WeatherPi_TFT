@@ -347,7 +347,7 @@ class Particles(object):
                     particle_list[i][0] = x
 
             if LANDSCAPE:
-                surf.blit(self.surf, (int(110 * ZOOM), int(100 * ZOOM)))
+                surf.blit(self.surf, (int(105 * ZOOM), int(100 * ZOOM)))
             else:
                 surf.blit(self.surf, (int(155 * ZOOM), int(140 * ZOOM)))
 
@@ -948,7 +948,6 @@ class Update(object):
             DrawImage(new_surf, images['wifi'], 5, size=15, fillcolor=RED if CONNECTION_ERROR else GREEN).right(24)
             DrawImage(new_surf, images['refresh'], 5, size=15, fillcolor=RED if REFRESH_ERROR else GREEN).right(8)
             DrawImage(new_surf, images['path'], 5, size=15, fillcolor=RED if PATH_ERROR else GREEN).right(-5)
-
             DrawImage(new_surf, images[WEATHERICON], 40, size=100).left(-7)
 
             if not ANIMATION:
@@ -965,20 +964,20 @@ class Update(object):
             DrawImage(new_surf, images[FORECASTICON_DAY_2], 185, size=50).left(75)
             DrawImage(new_surf, images[FORECASTICON_DAY_3], 185, size=50).left(155)
 
-            DrawImage(new_surf, images['sunrise'], 35, size=25).right(50)
-            DrawImage(new_surf, images['sunset'], 65, size=25).right(50)
+            DrawImage(new_surf, images['sunrise'], 68, size=25).right(50)
+            DrawImage(new_surf, images['sunset'], 95, size=25).right(50)
 
             draw_wind_layer(new_surf, current_forecast['wind_dir'], 187)
 
             size = int(60 * ZOOM)
-            x = int(SURFACE_WIDTH - size)
-            draw_moon_layer(new_surf, x-(int(13*SCALE)), int(100 * ZOOM), size)
+            x = int(SURFACE_WIDTH - size - 13*SCALE)
+            draw_moon_layer(new_surf, x, int(123 * ZOOM), size)
 
             # draw all the strings
             if config["DISPLAY"]["SHOW_API_STATS"]:
                 DrawString(new_surf, str(stats_data['calls_remaining']), FONT_SMALL_BOLD, BLUE, 20).right(offset=-5)
 
-            DrawString(new_surf, summary_string, FONT_SMALL_BOLD, VIOLET, 40).right(95)
+            DrawString(new_surf, summary_string, FONT_SMALL_BOLD, VIOLET, 40).center(4, 2, -2) #.left(95)
 
             DrawString(new_surf, temp_out_string, FONT_BIG, ORANGE, 60).right(95)
 
@@ -993,10 +992,10 @@ class Update(object):
             DrawString(new_surf, day_2_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 1, -10)
             DrawString(new_surf, day_3_min_max_temp.center(9), FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 2, -10)
 
-            DrawString(new_surf, sunrise, FONT_SMALL_BOLD, MAIN_FONT, 40).right()
-            DrawString(new_surf, sunset, FONT_SMALL_BOLD, MAIN_FONT, 70).right()
+            DrawString(new_surf, sunrise, FONT_SMALL_BOLD, MAIN_FONT, 73).right()
+            DrawString(new_surf, sunset, FONT_SMALL_BOLD, MAIN_FONT, 100).right()
 
-            DrawString(new_surf, wind_direction, FONT_SMALL_BOLD, MAIN_FONT, 167).center(4, 3)
+            DrawString(new_surf, wind_direction, FONT_SMALL_BOLD, MAIN_FONT, 195).center(4, 3, -20)
             DrawString(new_surf, wind_speed_string, FONT_SMALL_BOLD, MAIN_FONT, 220).center(4, 3)  #.right(-5)
 
         else:
@@ -1136,7 +1135,7 @@ def draw_moon_layer(surf, x, y, size):
     draw.ellipse([(1, 1), (_size, _size)], fill=WHITE)
 
     # draw dark circle around the moon
-    #draw.circle((500, 500), radius, None, LIGHT_GRAY, 3)
+    # draw.circle((500, 500), radius, None, LIGHT_GRAY, 3)
 
     # draw dark side of the moon
     theta = moon_age / 14.765 * math.pi
@@ -1170,8 +1169,8 @@ def draw_moon_layer(surf, x, y, size):
 def draw_wind_layer(surf, angle, y):
     # center the wind direction icon and circle on surface
     if LANDSCAPE:
-        DrawImage(surf, images['circle'], y, size=30, fillcolor=WHITE).right(15)
-        DrawImage(surf, images['arrow'], y, size=30, fillcolor=RED, angle=-angle).right(15)
+        DrawImage(surf, images['circle'], y, size=30, fillcolor=WHITE).right()
+        DrawImage(surf, images['arrow'], y, size=30, fillcolor=RED, angle=-angle).right()
     else:
         DrawImage(surf, images['circle'], y, size=30, fillcolor=WHITE).draw_middle_position_icon()
         DrawImage(surf, images['arrow'], y, size=30, fillcolor=RED, angle=-angle).draw_middle_position_icon()
