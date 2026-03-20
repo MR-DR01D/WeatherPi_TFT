@@ -64,7 +64,7 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-config_data = open(PATH + 'config.json').read()
+config_data = open(PATH + 'config.json', encoding='utf-8').read()
 config = json.loads(config_data)
 
 theme_config = config["THEME"]
@@ -608,43 +608,14 @@ class Update(object):
 
         def wmo_code_to_description(wmo_code):
             """Convert WMO weather code to human-readable description"""
-            descriptions = {
-                0: "Clear sky",
-                1: "Mainly clear",
-                2: "Partly cloudy",
-                3: "Overcast",
-                45: "Fog",
-                48: "Depositing rime fog",
-                51: "Light drizzle",
-                53: "Moderate drizzle",
-                55: "Dense drizzle",
-                56: "Light freezing drizzle",
-                57: "Dense freezing drizzle",
-                61: "Slight rain",
-                63: "Moderate rain",
-                65: "Heavy rain",
-                66: "Light freezing rain",
-                67: "Heavy freezing rain",
-                71: "Slight snowfall",
-                73: "Moderate snowfall",
-                75: "Heavy snowfall",
-                77: "Snow grains",
-                80: "Slight rain showers",
-                81: "Moderate rain showers",
-                82: "Violent rain showers",
-                85: "Slight snow showers",
-                86: "Heavy snow showers",
-                95: "Thunderstorm",
-                96: "Thunderstorm with slight hail",
-                99: "Thunderstorm with heavy hail"
-            }
-            return descriptions.get(wmo_code, "Unknown weather")
+            try:
+                return config['WEATHER'][str(wmo_code)]
+            except:
+                return 'Unknown weather'
 
         def wind_deg_to_dir(deg):
             """Convert wind degrees to cardinal direction"""
-            directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-                         "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-            return directions[int((deg + 11.25) / 22.5) % 16]
+            return config['WIND'][str(int((deg + 11.25) / 22.5) % 16)]
 
         def transform_openmeteo_data(meteo_data):
             """Transform Open-Meteo response to match expected Weatherbit structure"""
@@ -1110,7 +1081,7 @@ def draw_time_layer():
         day_string = convert_timestamp(timestamp, theme["DATE_FORMAT"]["DAY"])
         date_string = convert_timestamp(timestamp, theme["DATE_FORMAT"]["SDATE"])
         DrawString(time_surf, date_string, DATE_FONT, MAIN_FONT, 17).left(-5)
-        DrawString(time_surf, day_string, DATE_FONT, MAIN_FONT, 5).left(-5)
+        DrawString(time_surf, day_string, DATE_FONT, MAIN_FONT, 2).left(-5)
         DrawString(time_surf, date_time_string, CLOCK_FONT, MAIN_FONT, 0).center(1, 0)
         logger.debug(f'Day: {day_string} - {date_string}')
     else:
