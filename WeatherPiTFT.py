@@ -80,6 +80,11 @@ OPENMETEO_LON = config['OPENMETEO']['LON']
 OPENMETEO_DAYS = config['OPENMETEO']['DAYS']
 OPENMETEO_TIMEZONE = config['OPENMETEO']['TIMEZONE']
 METRIC = config['LOCALE']['METRIC']
+RAIN_STR = config['LOCALE']['RAIN_STR']
+SNOW_STR = config['LOCALE']['SNOW_STR']
+PRECIP_STR = config['LOCALE']['PRECIP_STR']
+
+_last_time_second = -1
 
 locale.setlocale(locale.LC_ALL, (config['LOCALE']['ISO'], 'UTF-8'))
 
@@ -318,38 +323,44 @@ class Particles(object):
         self.surf.fill(BACKGROUND)
         self.surf.set_colorkey(BACKGROUND)
 
-        if not PRECIPTYPE == config['LOCALE']['PRECIP_STR']:
+        if PRECIPTYPE == PRECIP_STR:
+            return
 
-            for i in range(len(particle_list)):
+        is_rain = PRECIPTYPE == RAIN_STR
+        is_snow = PRECIPTYPE == SNOW_STR
+        draw_rect = pygame.draw.rect
+        psurf = self.surf
+        size = self.size
+        randrange = random.randrange
+        getrandbits = random.getrandbits
 
-                particle = particle_list[i]
-                x, y, w, h, speed, color, direct = particle
+        for i in range(len(particle_list)):
+            particle = particle_list[i]
+            x, y, w, h, speed, color, direct = particle
 
-                # Draw the snowflake
-                if PRECIPTYPE == config['LOCALE']['RAIN_STR']:
-                    pygame.draw.rect(self.surf, color, (x, y, w, h), 0)
-                else:
-                    pygame.draw.rect(self.surf, PRECIPCOLOR, (x, y, 2, 2), 0)
-
-                # Move the snowflake down one pixel
-                particle_list[i][1] += speed if PRECIPTYPE == config['LOCALE']['RAIN_STR'] else 1
-                if random.choice([True, False]):
-                    if PRECIPTYPE == config['LOCALE']['SNOW_STR']:
-                        particle_list[i][0] += 1 if direct else 0
-
-                # If the snowflake has moved off the bottom of the screen
-                if particle_list[i][1] > self.size:
-                    # Reset it just above the top
-                    y -= self.size
-                    particle_list[i][1] = y
-                    # Give it a new x position
-                    x = random.randrange(0, self.size)
-                    particle_list[i][0] = x
-
-            if LANDSCAPE:
-                surf.blit(self.surf, (int(105 * ZOOM), int(100 * ZOOM)))
+            # Draw the snowflake
+            if is_rain:
+                draw_rect(psurf, color, (x, y, w, h), 0)
             else:
-                surf.blit(self.surf, (int(155 * ZOOM), int(140 * ZOOM)))
+                draw_rect(psurf, PRECIPCOLOR, (x, y, 2, 2), 0)
+
+            # Move the snowflake down one pixel
+            particle_list[i][1] += speed if is_rain else 1
+            if is_snow and direct and getrandbits(1):
+                particle_list[i][0] += 1
+
+            # If the snowflake has moved off the bottom of the screen
+            if particle_list[i][1] > size:
+                # Reset it just above the top
+                y -= size
+                particle_list[i][1] = y
+                # Give it a new x position
+                particle_list[i][0] = randrange(0, size)
+
+        if LANDSCAPE:
+            surf.blit(psurf, (int(105 * ZOOM), int(100 * ZOOM)))
+        else:
+            surf.blit(psurf, (int(155 * ZOOM), int(140 * ZOOM)))
 
 
 class DrawString:
@@ -442,15 +453,25 @@ class DrawImage:
     def fill(surface, fillcolor: tuple):
         """converts the color on a mono colored icon"""
         surface.set_colorkey(BACKGROUND)
-        w, h = surface.get_size()
         r, g, b = fillcolor
-        for x in range(w):
-            for y in range(h):
-                a: int = surface.get_at((x, y))[3]
-                # removes some distortion from scaling/zooming
-                if a > 5:
-                    color = pygame.Color(r, g, b, a)
-                    surface.set_at((x, y), color)
+        try:
+            rgb = pygame.surfarray.pixels3d(surface)
+            alpha = pygame.surfarray.pixels_alpha(surface)
+            mask = alpha > 5
+            rgb[mask, 0] = r
+            rgb[mask, 1] = g
+            rgb[mask, 2] = b
+            del rgb, alpha
+        except Exception:
+            # fallback if surfarray/numpy unavailable
+            w, h = surface.get_size()
+            for x in range(w):
+                for y in range(h):
+                    a: int = surface.get_at((x, y))[3]
+                    # removes some distortion from scaling/zooming
+                    if a > 5:
+                        surface.set_at((x, y), pygame.Color(r, g, b, a))
+
 
     def left(self, offset=0):
         """
@@ -834,24 +855,24 @@ class Update(object):
 
         if pop == 0:
 
-            PRECIPTYPE = config['LOCALE']['PRECIP_STR']
+            PRECIPTYPE = PRECIP_STR
             PRECIPCOLOR = GREEN
 
         else:
 
             if pop > 0 and rain > snow:
 
-                PRECIPTYPE = config['LOCALE']['RAIN_STR']
+                PRECIPTYPE = RAIN_STR
                 PRECIPCOLOR = BLUE
 
             elif pop > 0 and snow > rain:
 
-                PRECIPTYPE = config['LOCALE']['SNOW_STR']
+                PRECIPTYPE = SNOW_STR
                 PRECIPCOLOR = WHITE
 
             else:
 
-                PRECIPTYPE = config['LOCALE']['PRECIP_STR']
+                PRECIPTYPE = PRECIP_STR
                 PRECIPCOLOR = GREEN
 
         logger.info(f'update PRECIPPOP to: {pop} %')
@@ -966,7 +987,8 @@ class Update(object):
             DrawString(new_surf, sunrise, FONT_SMALL_BOLD, MAIN_FONT, 73).right()
             DrawString(new_surf, sunset, FONT_SMALL_BOLD, MAIN_FONT, 100).right()
 
-            DrawString(new_surf, wind_direction, FONT_SMALL_BOLD, MAIN_FONT, 195).center(4, 3, -20)
+            #DrawString(new_surf, wind_direction, FONT_SMALL_BOLD, MAIN_FONT, 195).center(4, 3, -20)
+            DrawString(new_surf, wind_direction, FONT_SMALL_BOLD, MAIN_FONT, 193).center(4, 3, -20)
             DrawString(new_surf, wind_speed_string, FONT_SMALL_BOLD, MAIN_FONT, 220).center(4, 3)  #.right(-5)
 
         else:
@@ -1205,6 +1227,7 @@ def create_scaled_surf(surf, aa=False):
 
 
 def loop():
+    global _last_time_second
     Update.run()
 
     running = True
@@ -1231,13 +1254,17 @@ def loop():
         # finally take the dynamic surface and blit it to the main surface
         display_surf.blit(dynamic_surf, (0, 0))
 
-        # now do the same for the time layer so it did not interfere with the other layers
-        # fill the layer and make it transparent as well
-        time_surf.fill(BACKGROUND)
-        time_surf.set_colorkey(BACKGROUND)
+        # only re-render time layer when the second has changed
+        current_second = int(time.time())
+        if current_second != _last_time_second:
+            _last_time_second = current_second
+            # now do the same for the time layer so it did not interfere with the other layers
+            # fill the layer and make it transparent as well
+            time_surf.fill(BACKGROUND)
+            time_surf.set_colorkey(BACKGROUND)
+            draw_time_layer()
 
         # draw the time to the main layer
-        draw_time_layer()
         display_surf.blit(time_surf, (0, 0))
 
         # # draw the mouse events
@@ -1274,7 +1301,8 @@ def loop():
         # display_surf.blit(mouse_surf, (0, 0))
 
         # finally take the main surface and blit it to the tft surface
-        tft_surf.blit(create_scaled_surf(display_surf, aa=AA), FIT_SCREEN)
+        # tft_surf.blit(create_scaled_surf(display_surf, aa=AA), FIT_SCREEN)
+        tft_surf.blit(display_surf, FIT_SCREEN)
 
         # update the display with all surfaces merged into the main one
         pygame.display.update()
