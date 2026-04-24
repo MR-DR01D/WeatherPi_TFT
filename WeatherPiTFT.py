@@ -223,15 +223,15 @@ if config['ENV'] == 'Pi':
 tft_surf = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT), FLAGS)
 
 # the drawing area - everything will be drawn here before scaling and rendering on the display tft_surf
-display_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT))
+display_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT)).convert()
 # dynamic surface for status bar updates and dynamic values like fps
-dynamic_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT))
+dynamic_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT)).convert()
 # exclusive surface for the time
-time_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT))
+time_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT)).convert()
 # exclusive surface for the mouse/touch events
-mouse_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT))
+mouse_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT)).convert()
 # surface for the weather data - will only be created once if the data is updated from the api
-weather_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT))
+weather_surf = pygame.Surface((SURFACE_WIDTH, SURFACE_HEIGHT)).convert()
 
 clock = pygame.time.Clock()
 
@@ -252,6 +252,9 @@ YELLOW = tuple(theme["COLOR"]["YELLOW"])
 ORANGE = tuple(theme["COLOR"]["ORANGE"])
 VIOLET = tuple(theme["COLOR"]["VIOLET"])
 COLOR_LIST = [BLUE, LIGHT_BLUE, DARK_BLUE]
+
+dynamic_surf.set_colorkey(BACKGROUND)
+time_surf.set_colorkey(BACKGROUND)
 
 FONT_MEDIUM = theme["FONT"]["MEDIUM"]
 FONT_BOLD = theme["FONT"]["BOLD"]
@@ -447,7 +450,7 @@ class DrawImage:
 
         self.fillcolor = fillcolor
 
-        self.image = pygame.image.frombytes(self.image.tobytes(), self.image.size, "RGBA")
+        self.image = pygame.image.frombytes(self.image.tobytes(), self.image.size, "RGBA").convert_alpha()
 
     @staticmethod
     def fill(surface, fillcolor: tuple):
@@ -1064,7 +1067,7 @@ class Update(object):
         THREADS = [t for t in THREADS if t.is_alive()]
         logging.info(f'threads cleaned: {len(THREADS)} left in the queue')
 
-        pygame.time.delay(1500)
+        #pygame.time.delay(1500)
         UPDATING = pygame.time.get_ticks() + 1500  # 1.5 seconds
 
         return weather_surf
@@ -1154,7 +1157,7 @@ def draw_moon_layer(surf, x, y, size):
     logger.debug(f'moon phase age: {moon_age} percentage: {round(100 - (sum_length / sum_x) * 100, 1)}')
 
     image = image.resize((size, size), Image.Resampling.LANCZOS if AA else Image.Resampling.BILINEAR)
-    image = pygame.image.frombytes(image.tobytes(), image.size, "RGBA")
+    image = pygame.image.frombytes(image.tobytes(), image.size, "RGBA").convert_alpha()
 
     surf.blit(image, (x, y))
 
@@ -1233,7 +1236,8 @@ def loop():
     running = True
 
     while running:
-        tft_surf.fill(BACKGROUND)
+        if FIT_SCREEN != (0, 0):
+            tft_surf.fill(BACKGROUND)
 
         # fill the actual main surface and blit the image/weather layer
         display_surf.fill(BACKGROUND)
@@ -1241,7 +1245,7 @@ def loop():
 
         # fill the dynamic layer, make it transparent and use draw functions that write to that surface
         dynamic_surf.fill(BACKGROUND)
-        dynamic_surf.set_colorkey(BACKGROUND)
+        # dynamic_surf.set_colorkey(BACKGROUND)
 
         draw_statusbar()
 
@@ -1261,7 +1265,7 @@ def loop():
             # now do the same for the time layer so it did not interfere with the other layers
             # fill the layer and make it transparent as well
             time_surf.fill(BACKGROUND)
-            time_surf.set_colorkey(BACKGROUND)
+            #time_surf.set_colorkey(BACKGROUND)
             draw_time_layer()
 
         # draw the time to the main layer
@@ -1305,7 +1309,7 @@ def loop():
         tft_surf.blit(display_surf, FIT_SCREEN)
 
         # update the display with all surfaces merged into the main one
-        pygame.display.update()
+        pygame.display.flip()
 
         # do it as often as FPS configured (30 FPS recommend for particle simulation, 15 runs fine too, 60 is overkill)
         clock.tick(FPS)
